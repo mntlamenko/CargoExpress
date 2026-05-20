@@ -1,0 +1,92 @@
+﻿@page "/"
+@rendermode InteractiveServer
+
+<PageTitle>CargoTrans - Грузоперевозки по России</PageTitle>
+
+<div class="hero-section text-center">
+    <div class="container">
+        <h1 class="hero-title">Грузоперевозки по России</h1>
+        <p class="hero-subtitle">Быстро. Надёжно. По всей стране.</p>
+        <p class="hero-desc">Рассчитайте стоимость за 3 клика!</p>
+        <div class="hero-buttons">
+            <a href="/services" class="btn btn-outline-light btn-lg">Наши услуги</a>
+        </div>
+    </div>
+</div>
+
+
+<div class="vehicle-section">
+    <div class="container">
+        <h2 class="section-title">Наш автопарк</h2>
+        <div class="row g-4">
+            @foreach (var vehicle in vehicleTypes)
+            {
+                <div class="col-md-4">
+                    <div class="card h-100 text-center p-4">
+                        <div style="font-size: 5rem;">@vehicle.Icon</div>
+                        <h4 class="mt-3 fw-bold">@vehicle.Name</h4>
+                        <p class="text-muted">@vehicle.Description</p>
+                        <div class="mt-auto">
+                            <span class="badge bg-primary fs-6 px-3 py-2">
+                                Грузоподъёмность: @vehicle.Capacity т
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private string quickFrom = "";
+    private string quickTo = "";
+    private CargoType? selectedCargo;
+    
+    [Inject]
+    public NavigationManager? Navigation { get; set; }
+    
+    private List<CargoType> cargoTypes = new()
+    {
+        new CargoType { Name = "Мебель", Icon = "🛋️" },
+        new CargoType { Name = "Техника", Icon = "📺" },
+        new CargoType { Name = "Стройматериалы", Icon = "🧱" },
+        new CargoType { Name = "Оборудование", Icon = "⚙️" }
+    };
+    
+    private List<VehicleType> vehicleTypes = new()
+    {
+        new VehicleType { Name = "Газель", Icon = "🚐", Capacity = 1.5, Description = "Для небольших грузов и переездов" },
+        new VehicleType { Name = "Бычок", Icon = "🚚", Capacity = 3.5, Description = "Средний грузовик для города" },
+        new VehicleType { Name = "Фура", Icon = "🚛", Capacity = 20, Description = "Для крупных межгородних перевозок" }
+    };
+    
+    private void SelectCargo(CargoType cargo)
+    {
+        if (selectedCargo == cargo)
+        {
+            selectedCargo = null;
+        }
+        else
+        {
+            selectedCargo = cargo;
+        }
+        StateHasChanged();
+    }
+    
+    
+    
+    public class CargoType
+    {
+        public string Name { get; set; } = "";
+        public string Icon { get; set; } = "";
+    }
+    
+    public class VehicleType
+    {
+        public string Name { get; set; } = "";
+        public string Icon { get; set; } = "";
+        public double Capacity { get; set; }
+        public string Description { get; set; } = "";
+    }
+}

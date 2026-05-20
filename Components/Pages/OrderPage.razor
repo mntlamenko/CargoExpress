@@ -1,0 +1,135 @@
+﻿@page "/order"
+@using CargoExpress.Models
+@using CargoExpress.Data
+@inject CargoService CargoService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Оформить заявку — CargoExpress</PageTitle>
+
+<div class="page-header text-center mb-4">
+    <h2>📋 Оформить заявку</h2>
+    <p class="text-white-50">Заполните форму — мы перезвоним в течение 15 минут</p>
+</div>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-@(isError ? "danger" : "success") alert-dismissible fade show">
+        @message
+        <button type="button" class="btn-close" @onclick="() => message = string.Empty"></button>
+    </div>
+}
+
+<div class="card">
+    <div class="card-body p-4">
+        <EditForm Model="@newOrder" OnValidSubmit="HandleSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="alert alert-warning" />
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">👤 Ваше имя *</label>
+                    <InputText @bind-Value="newOrder.CustomerName"
+                               class="form-control" placeholder="Иванов Иван Иванович" />
+                    <ValidationMessage For="@(() => newOrder.CustomerName)" class="text-danger small" />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">📧 Email *</label>
+                    <InputText @bind-Value="newOrder.Email"
+                               class="form-control" placeholder="example@mail.ru" />
+                    <ValidationMessage For="@(() => newOrder.Email)" class="text-danger small" />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">📞 Телефон *</label>
+                    <InputText @bind-Value="newOrder.Phone"
+                               class="form-control" placeholder="+7 (999) 123-45-67" />
+                    <ValidationMessage For="@(() => newOrder.Phone)" class="text-danger small" />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">🚛 Тип услуги</label>
+                    <InputSelect @bind-Value="newOrder.ServiceType" class="form-select">
+                        <option value="Грузоперевозка по городу">Грузоперевозка по городу</option>
+                        <option value="Межгород">Межгород</option>
+                        <option value="Квартирный переезд">Квартирный переезд</option>
+                        <option value="Офисный переезд">Офисный переезд</option>
+                        <option value="Перевозка вещей">Перевозка вещей</option>
+                        <option value="Доставка стройматериалов">Доставка стройматериалов</option>
+                    </InputSelect>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">📍 Откуда *</label>
+                    <InputText @bind-Value="newOrder.FromAddress"
+                               class="form-control" placeholder="г. Москва, ул. Ленина, д. 1" />
+                    <ValidationMessage For="@(() => newOrder.FromAddress)" class="text-danger small" />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">🏁 Куда *</label>
+                    <InputText @bind-Value="newOrder.ToAddress"
+                               class="form-control" placeholder="г. СПб, ул. Невская, д. 10" />
+                    <ValidationMessage For="@(() => newOrder.ToAddress)" class="text-danger small" />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">⚖️ Вес груза (кг)</label>
+                    <InputNumber @bind-Value="newOrder.Weight"
+                                 class="form-control" min="0.1" step="0.5" />
+                    <ValidationMessage For="@(() => newOrder.Weight)" class="text-danger small" />
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">💬 Комментарий (необязательно)</label>
+                    <InputTextArea @bind-Value="newOrder.Comment"
+                                   class="form-control" rows="3"
+                                   placeholder="Этаж, лифт, особенности груза..." />
+                </div>
+
+                <div class="col-12 d-flex gap-3 mt-2">
+                    <button type="submit" class="btn btn-success btn-lg" disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        ✅ Отправить заявку
+                    </button>
+                    <a href="/" class="btn btn-outline-secondary btn-lg">← Главная</a>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private CargoExpress.Models.Order newOrder = new();
+    private string message = "";
+    private bool isError = false;
+    private bool isLoading = false;
+
+    private async Task HandleSubmit()
+    {
+        isLoading = true;
+
+        var result = await CargoService.CreateOrderAsync(newOrder);
+
+        if (result)
+        {
+            message = "✅ Заявка принята! Мы позвоним вам в течение 15 минут.";
+            isError = false;
+            newOrder = new CargoExpress.Models.Order();
+
+            await Task.Delay(3000);
+            Navigation.NavigateTo("/");
+        }
+        else
+        {
+            message = "❌ Ошибка при отправке заявки. Попробуйте ещё раз.";
+            isError = true;
+        }
+
+        isLoading = false;
+    }
+}

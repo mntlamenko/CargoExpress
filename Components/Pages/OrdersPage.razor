@@ -1,0 +1,100 @@
+﻿@page "/orders"
+@using CargoExpress.Models
+@using CargoExpress.Data
+@inject CargoService CargoService
+@rendermode InteractiveServer
+
+<PageTitle>Заявки — CargoExpress</PageTitle>
+
+<div class="page-header mb-4">
+    <h2>📋 Все заявки</h2>
+</div>
+
+@if (orders == null)
+{
+    <div class="text-center">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2">Загрузка...</p>
+    </div>
+}
+else if (orders.Count == 0)
+{
+    <div class="alert alert-info">
+        <h5>📭 Заявок пока нет</h5>
+        <p class="mb-2">Оформленные заявки появятся здесь.</p>
+        <a href="/order" class="btn btn-success btn-sm">Оформить заявку</a>
+    </div>
+}
+else
+{
+    <div class="alert alert-secondary mb-3">
+        Всего заявок: <strong>@orders.Count</strong>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Клиент</th>
+                    <th>Телефон</th>
+                    <th>Услуга</th>
+                    <th>Маршрут</th>
+                    <th>Вес (кг)</th>
+                    <th>Дата</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in orders)
+                {
+                    <tr>
+                        <td><strong>@order.Id</strong></td>
+                        <td>
+                            <div>@order.CustomerName</div>
+                            <small class="text-muted">@order.Email</small>
+                        </td>
+                        <td>@order.Phone</td>
+                        <td>@order.ServiceType</td>
+                        <td>
+                            <small>
+                                <div>📍 @order.FromAddress</div>
+                                <div>🏁 @order.ToAddress</div>
+                            </small>
+                        </td>
+                        <td>@order.Weight.ToString("F1")</td>
+                        <td>@order.OrderDate.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td>
+                            <span class="badge @GetBadgeClass(order.Status)">
+                                @order.Status
+                            </span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<div class="mt-3 d-flex gap-2">
+    <a href="/" class="btn btn-outline-secondary">← Главная</a>
+    <a href="/order" class="btn btn-success">📋 Новая заявка</a>
+</div>
+
+@code {
+    private List<CargoExpress.Models.Order> orders = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        orders = await CargoService.GetOrdersAsync();
+    }
+
+    private string GetBadgeClass(string status) => status switch
+    {
+        "Новый" => "bg-primary",
+        "В работе" => "bg-warning text-dark",
+        "Выполнен" => "bg-success",
+        "Отменён" => "bg-danger",
+        _ => "bg-secondary"
+    };
+}

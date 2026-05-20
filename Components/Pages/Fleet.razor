@@ -1,0 +1,85 @@
+﻿@page "/fleet"
+@inject CargoExpress.Data.CargoService CargoService
+@rendermode InteractiveServer
+@using CargoExpress.Models
+
+<PageTitle>Автопарк — CargoExpress</PageTitle>
+
+<div class="page-header text-center mb-4">
+    <h2>🚛 Наш автопарк</h2>
+    <p class="text-white-50">Современные автомобили для любых задач</p>
+</div>
+
+<div class="text-center mb-4">
+    <button class="btn @(showAll ? "btn-primary" : "btn-outline-light") me-2"
+            @onclick="() => { showAll = true; }">
+        Все (@(vehicles?.Count ?? 0))
+    </button>
+    <button class="btn @(!showAll ? "btn-success" : "btn-outline-light")"
+            @onclick="() => { showAll = false; }">
+        Свободны (@(vehicles?.Count(v => v.IsAvailable) ?? 0))
+    </button>
+</div>
+
+@if (vehicles == null)
+{
+    <div class="text-center text-white">
+        <div class="spinner-border" role="status"></div>
+        <p class="mt-2">Загрузка...</p>
+    </div>
+}
+else
+{
+    var filtered = showAll ? vehicles : vehicles.Where(v => v.IsAvailable).ToList();
+
+    <div class="row g-4">
+        @foreach (var vehicle in filtered)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 @(!vehicle.IsAvailable ? "card-busy" : "")">
+                    <div class="card-icon-big">@vehicle.Icon</div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <h5 class="card-title mb-1">@vehicle.Name</h5>
+                            <span class="badge @(vehicle.IsAvailable ? "bg-success" : "bg-secondary")">
+                                @(vehicle.IsAvailable ? "Свободен" : "Занят")
+                            </span>
+                        </div>
+                        <p class="text-muted small mb-3">@vehicle.Model</p>
+
+                        <ul class="list-unstyled vehicle-specs">
+                            <li>📦 Грузоподъёмность: <strong>@vehicle.Capacity т</strong></li>
+                            <li>💰 Стоимость: <strong>@vehicle.PricePerKm ₽/км</strong></li>
+                        </ul>
+
+                        @if (vehicle.IsAvailable)
+                        {
+                            <a href="/order" class="btn btn-primary w-100 mt-2">📋 Заказать</a>
+                        }
+                        else
+                        {
+                            <button class="btn btn-secondary w-100 mt-2" disabled>Недоступен</button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (!filtered.Any())
+    {
+        <div class="alert alert-warning text-center">
+            Нет свободных автомобилей. Позвоните нам — возможно, освободится скоро!
+        </div>
+    }
+}
+
+@code {
+    private List<Vehicle>? vehicles;
+    private bool showAll = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        vehicles = await CargoService.GetVehiclesAsync();
+    }
+}

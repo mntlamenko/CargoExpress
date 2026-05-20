@@ -1,0 +1,178 @@
+﻿@page "/prices"
+@inject CargoExpress.Data.CargoService CargoService
+@rendermode InteractiveServer
+@using CargoExpress.Models
+
+<PageTitle>Цены — CargoExpress</PageTitle>
+
+<div class="page-header text-center mb-4">
+    <h2>💰 Цены и тарифы</h2>
+    <p class="text-white-50">Прозрачные цены без скрытых доплат</p>
+</div>
+
+<!-- Таблица тарифов -->
+<div class="card mb-5">
+    <div class="card-body p-0">
+        <h5 class="p-3 mb-0 border-bottom">📋 Таблица тарифов</h5>
+        @if (prices == null)
+        {
+            <p class="p-3 text-muted">Загрузка...</p>
+        }
+        else
+        {
+            <table class="table table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>Тип перевозки</th>
+                        <th>Цена</th>
+                        <th>Описание</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var price in prices)
+                    {
+                        <tr>
+                            <td><strong>@price.Route</strong></td>
+                            <td class="text-success fw-bold">@price.PriceValue @price.Unit</td>
+                            <td class="text-muted small">@price.Description</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">🧮 Калькулятор стоимости</h5>
+        <p class="text-muted small">Примерный расчёт — точная цена будет указана менеджером</p>
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Тип перевозки</label>
+                <select class="form-select" @onchange="OnTypeChanged">
+                    <option value="city">По городу</option>
+                    <option value="intercity">Межгород</option>
+                    <option value="moving">Переезд</option>
+                    <option value="loaders">Грузчики (без авто)</option>
+                </select>
+            </div>
+
+            @if (calcType == "city" || calcType == "intercity")
+            {
+                <div class="col-md-4">
+                    <label class="form-label">Расстояние (км)</label>
+                    <input type="number" class="form-control" min="1" max="10000"
+                           @bind="distance" @bind:event="oninput" />
+                </div>
+            }
+
+            @if (calcType == "moving")
+            {
+                <div class="col-md-4">
+                    <label class="form-label">Количество комнат</label>
+                    <select class="form-select" @onchange="OnRoomsChanged">
+                        <option value="1">1 комната</option>
+                        <option value="2">2 комнаты</option>
+                        <option value="3">3 комнаты</option>
+                        <option value="4">4+ комнаты</option>
+                    </select>
+                </div>
+            }
+
+            @if (calcType == "loaders")
+            {
+                <div class="col-md-4">
+                    <label class="form-label">Количество часов</label>
+                    <input type="number" class="form-control" min="1" max="24"
+                           @bind="hours" @bind:event="oninput" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Количество грузчиков</label>
+                    <select class="form-select" @onchange="OnLoadersChanged">
+                        <option value="1">1 грузчик</option>
+                        <option value="2">2 грузчика</option>
+                        <option value="3">3 грузчика</option>
+                        <option value="4">4 грузчика</option>
+                    </select>
+                </div>
+            }
+
+            <div class="col-12">
+                <button class="btn btn-primary" @onclick="Calculate">
+                    🧮 Рассчитать
+                </button>
+            </div>
+        </div>
+
+        @if (calculatedPrice > 0)
+        {
+            <div class="result-box mt-4">
+                <div class="result-label">Примерная стоимость:</div>
+                <div class="result-price">~ @calculatedPrice.ToString("N0") ₽</div>
+                <div class="result-note">
+                    Точная стоимость зависит от конкретного маршрута и объёма груза.
+                    <a href="/order">Оформите заявку</a> — менеджер свяжется с вами!
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<Price>? prices;
+    private string calcType = "city";
+    private decimal distance = 10;
+    private int hours = 4;
+    private int loadersCount = 2;
+    private int rooms = 1;
+    private decimal calculatedPrice = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        prices = await CargoService.GetPricesAsync();
+    }
+
+    private void OnTypeChanged(ChangeEventArgs e)
+    {
+        calcType = e.Value?.ToString() ?? "city";
+        calculatedPrice = 0;
+    }
+
+    private void OnRoomsChanged(ChangeEventArgs e)
+    {
+        rooms = int.Parse(e.Value?.ToString() ?? "1");
+    }
+
+    private void OnLoadersChanged(ChangeEventArgs e)
+    {
+        loadersCount = int.Parse(e.Value?.ToString() ?? "2");
+    }
+
+    private void Calculate()
+    {
+        calculatedPrice = calcType switch
+        {
+            "city" => distance <= 50
+                ? 500 + (distance > 20 ? (distance - 20) * 15 : 0)
+                : 500 + distance * 25,
+
+            "intercity" => distance <= 500
+                ? distance * 30
+                : distance * 25,
+
+            "moving" => rooms switch
+            {
+                1 => 3000,
+                2 => 5000,
+                3 => 8000,
+                _ => 12000
+            },
+
+            "loaders" => hours * loadersCount * 500,
+
+            _ => 0
+        };
+    }
+}
