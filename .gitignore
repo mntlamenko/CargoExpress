@@ -1,0 +1,17 @@
+﻿# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+
+# Сборка и кэш
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+
+# База данных и локальные конфиги
+*.db
+*.db-shm
+*.db-wal
+appsettings.Development.json
