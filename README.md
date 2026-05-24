@@ -1,55 +1,144 @@
-CargoExpress — Система управления грузоперевозками
+# CargoExpress
 
-**CargoExpress** — веб-приложение для автоматизации процессов грузоперевозок по России. Система предоставляет каталог логистических услуг, интерактивный калькулятор стоимости доставки, управление автопарком, а также функционал создания и отслеживания заявок на перевозку.
+Веб-сайт транспортной компании грузоперевозок, разработанный на ASP.NET Core 8 с использованием Blazor Server и Entity Framework Core.
 
-##  Основные возможности
--  **Каталог услуг**: городские/междугородние перевозки, квартирные/офисные переезды, доставка стройматериалов, услуги грузчиков.
--  **Калькулятор стоимости**: динамический расчёт цены в зависимости от типа перевозки, расстояния, количества комнат или часов работы.
--  **Управление автопарком**: просмотр транспортных средств, фильтрация по статусу (`Свободен`/`Занят`), технические характеристики и тарифы.
--  **Система заявок**: создание заказов через веб-интерфейс, серверная валидация данных, просмотр истории и статусов.
--  **REST API**: полноценные эндпоинты для работы с заказами (`GET`, `POST`, `DELETE`).
--  **Контейнеризация**: полная изоляция среды через Docker и Docker Compose с сохранением данных SQLite в томе.
--  
+## Структура проекта
+
+```
 CargoExpress/
-├── Controllers/      # REST API
-├── Models/           # Модели данных
-├── Components/       # Blazor UI
-├── Data/             # Контекст БД
-├── Dockerfile        # Контейнеризация
-└── docker-compose.yml
-└── wwwroot/        # CSS
+│
+├── Components/                        # Blazor-компоненты
+│   ├── Layout/
+│   │   ├── MainLayout.razor           # Главный макет (навигация + footer)
+│   │   └── NavMenu.razor              # Навигационное меню
+│   │
+│   ├── Pages/
+│   │   ├── Index.razor                # Главная страница
+│   │   ├── Services.razor             # Страница услуг
+│   │   ├── Fleet.razor                # Страница автопарка
+│   │   ├── Prices.razor               # Страница цен и калькулятор
+│   │   ├── OrderPage.razor            # Форма оформления заявки
+│   │   └── OrdersPage.razor           # Список всех заявок
+│   │
+│   ├── App.razor                      # Корневой HTML-документ
+│   ├── Routes.razor                   # Роутинг Blazor
+│   └── _Imports.razor                 # Глобальные using-директивы
+│
+├── Controllers/
+│   └── OrdersController.cs            # REST API для заявок (GET, POST, DELETE)
+│
+├── Data/
+│   └── CargoService.cs                # Сервис для работы с БД (DI)
+│
+├── Migrations/                        # Миграции Entity Framework Core
+│   ├── ..._InitialCreate.cs
+│   └── CargoContextModelSnapshot.cs
+│
+├── Models/                            # Модели данных (таблицы БД)
+│   ├── CargoContext.cs                # DbContext + начальные данные (Seed)
+│   ├── Order.cs                       # Заявка клиента
+│   ├── Price.cs                       # Тариф
+│   ├── Service.cs                     # Услуга компании
+│   └── Vehicle.cs                     # Транспортное средство
+│
+├── wwwroot/                           # Статические файлы
+│   ├── bootstrap/
+│   │   └── bootstrap.min.css          # Bootstrap 5
+│   ├── app.css                        # Пользовательские стили
+│   └── favicon.png
+│
+├── .dockerignore
+├── .gitignore
+├── appsettings.json                   # Настройки приложения (строка подключения к БД)
+├── appsettings.Development.json
+├── cargo.db                           # База данных SQLite (создаётся автоматически)
+├── docker-compose.yml                 # Конфигурация Docker Compose
+├── Dockerfile                         # Сборка Docker-образа
+├── Program.cs                         # Точка входа, регистрация сервисов
 └── README.md
-## Стек технологий
-| Категория | Технологии |
-|---|---|
-| **Платформа** | .NET 8, ASP.NET Core |
-| **Frontend** | Blazor Server (`@rendermode InteractiveServer`) |
-| **База данных** | SQLite, Entity Framework Core 8.0 (Code First) |
-| **Валидация** | FluentValidation, DataAnnotations |
-| **Контейнеризация** | Docker, Docker Compose (Multi-stage build) |
-| **Архитектура** | Многоуровневая, Dependency Injection, MVC + Blazor |
+```
 
-##  Быстрый запуск
+## Установка и запуск
 
-### Локальный запуск (через .NET CLI)
+### Требования
+
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [Visual Studio 2022](https://visualstudio.microsoft.com/) (или VS Code)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+
+### Вариант 1 — Запуск через Visual Studio 2022
+
+**1. Клонировать репозиторий**
+
 ```bash
-# 1. Клонировать репозиторий
-git clone https://github.com/mntlamenko/CargoExpress.git
+git clone https://github.com/<ваш-логин>/CargoExpress.git
+cd CargoExpress
+```
+
+**2. Открыть решение**
+
+Откройте файл `CargoExpress.slnx` в Visual Studio 2022.
+
+**3. Установить зависимости**
+
+В меню: **Инструменты → Диспетчер пакетов NuGet → Консоль диспетчера пакетов**
+
+```
+dotnet restore
+```
+
+**4. Применить миграции**
+
+```
+Update-Database
+```
+
+База данных `cargo.db` создастся автоматически и заполнится тестовыми данными.
+
+**5. Запустить проект**
+
+Нажмите **F5** или кнопку **Запустить**.
+
+Сайт откроется по адресу: `https://localhost:5252`
+
+---
+
+### Вариант 2 — Запуск через командную строку (dotnet CLI)
+
+```bash
+# Клонировать репозиторий
+git clone https://github.com/<ваш-логин>/CargoExpress.git
 cd CargoExpress
 
-# 2. Восстановить зависимости
+# Восстановить пакеты
 dotnet restore
 
-# 3. Применить миграции БД
+# Применить миграции
 dotnet ef database update
 
-# 4. Запустить приложение
+# Запустить приложение
 dotnet run
-# 1. Собрать и запустить контейнеры в фоновом режиме
-docker compose up -d --build
+```
 
-# 2. Проверить статус контейнеров
-docker compose ps
+Сайт будет доступен по адресу: `http://localhost:5000`
 
-# 3. Просмотр логов в реальном времени
-docker compose logs -f
+---
+
+### Вариант 3 — Запуск через Docker
+
+```bash
+# Клонировать репозиторий
+git clone https://github.com/<ваш-логин>/CargoExpress.git
+cd CargoExpress
+
+# Собрать и запустить контейнер
+docker-compose up -d
+```
+
+Сайт будет доступен по адресу: `http://localhost:5000`
+
+Остановить контейнер:
+
+```bash
+docker-compose down
+```
